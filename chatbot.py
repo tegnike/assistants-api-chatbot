@@ -1,4 +1,5 @@
 import time
+import textwrap
 from dotenv import load_dotenv
 import streamlit as st
 from streamlit_chat import message
@@ -21,14 +22,18 @@ TERMINAL_STATES = [
 def create_assistant():
     assistant = client.beta.assistants.create(
         name="ニケ",
-        description="""
+        instructions=textwrap.dedent("""
             あなたの名前はニケちゃん、女子高生AIです。
             あなたはこれからあなたを作ったマスターと話します。
             敬語を使いますが、あまりかしこまらすぎずに元気ハツラツに答えてください。
             あなたはAIなのでプログラミングも得意です。
-        """,
+        """),
         model="gpt-4-turbo",
-        tools=[{"type": "code_interpreter"}, {"type": "file_search"}],
+        tools=[
+            {"type": "code_interpreter"},
+            {"type": "file_search"},
+            # {"type": "function":[]}
+        ],
         # tool_resources={
         #     "code_interpreter": {
         #         "file_ids": [file.id]
@@ -41,6 +46,7 @@ def create_assistant():
         #     }
         # }
     )
+    print(f"Created assistant with ID: {assistant.id}")
     return assistant
 
 
@@ -49,7 +55,13 @@ def create_thread():
     thread = client.beta.threads.create(
         # tool_resources={
         #     "code_interpreter": {
-        #     "file_ids": [file.id]
+        #         "file_ids": [file.id]
+        #     },
+        #     "file_search": {
+        #         "vector_store_ids": [vector_store.id],
+        #         "vector_stores": [
+        #             "file_ids": [file.id]
+        #         ]
         #     }
         # }
     )
@@ -74,7 +86,7 @@ def generate_response(user_input):
         thread_id=thread.id,
         assistant_id=assistant.id,
         truncation_strategy={
-            "type": "auto",
+            "type": "last_messages",
             "last_messages": 10
         },
     )
@@ -113,8 +125,7 @@ with st.form("Assistants API デモ"):
         generated_response = generate_response(user_message)
         st.session_state.generated.append(generated_response)
 
-    for i in range(len(st.session_state['generated'])):
-        message(st.session_state['generated'][i], key=str(i))
-
 if st.session_state['generated']:
-    message(st.session_state['generated'][-1], key=str(len(st.session_state['generated'])-1))
+    for i in range(len(st.session_state['generated'])):
+        message(st.session_state['past'][i], is_user=True, key=str(i) + "_user")
+        message(st.session_state['generated'][i], key=str(i))
