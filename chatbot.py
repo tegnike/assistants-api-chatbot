@@ -57,8 +57,8 @@ def create_thread():
     return thread
 
 
-# assistant = create_assistant()
-assistant = client.beta.assistants.retrieve("asst_Dyf8M2h6lPdojCmouzgDbc7t")
+assistant = create_assistant()
+# assistant = client.beta.assistants.retrieve("")
 thread = create_thread()
 
 
